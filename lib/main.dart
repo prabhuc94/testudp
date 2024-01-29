@@ -60,9 +60,10 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   String broadcastMessage = "";
-  final int port = 4444;
+  final int port = 1423;
   final InternetAddress address = InternetAddress("239.25.25.255");
 
+  RawDatagramSocket? socket;
   List<String> _messages = [];
   StreamController<List<String>> socketMessages = StreamController.broadcast(
       sync: true);
@@ -74,12 +75,12 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _initializeReceiver() async {
-    var socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, port);
-    socket.send("Sever Connected".codeUnits, InternetAddress.loopbackIPv4, port);
-    socket.joinMulticast(address);
-    socket.send("Multicast group joined".codeUnits, InternetAddress.loopbackIPv4, port);
-    socket.listen((event) {
-      var data = socket.receive();
+    socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, port);
+    socket?.send("Sever Connected".codeUnits, InternetAddress.loopbackIPv4, port);
+    socket?.joinMulticast(address);
+    socket?.send("Multicast group joined".codeUnits, InternetAddress.loopbackIPv4, port);
+    socket?.listen((event) {
+      var data = socket?.receive();
       if (data != null) {
         String value = String.fromCharCodes(data.data).trim();
         _messages.add("${data.address.address}:${data.port} - $value");
@@ -87,17 +88,24 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     });
   }
+  
+  Future<bool> portExist(int portNumber) async {
+    try {
+      var value = await ServerSocket.bind(InternetAddress.anyIPv4, portNumber);
+      return true;
+    } catch(e) {
+      return false;
+    }
+  }
 
   void sendData() async {
-    // Create a UDP socket
-    RawDatagramSocket socket = await RawDatagramSocket.bind(
-        InternetAddress.anyIPv4, 0);
-    // Send the data to the specified address and port
-    var count = socket.send("Hello [${Platform.operatingSystem}], UDP! ${DateTime.now().toIso8601String()}".codeUnits, address, port);
-    print("SENDING $count");
-
-    // Close the socket
-    socket.close();
+    RawDatagramSocket soc = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+    soc.send("Hello [${Platform.operatingSystem}], UDP! ${DateTime.now().toIso8601String()}".codeUnits, address, port);
+    soc.listen((event) {
+      print("EVENT ${event.runtimeType}");
+    }, onError: (e) {
+      print("SENDING-ERROR ${e}");
+    });
   }
 
   @override
