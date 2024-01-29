@@ -80,7 +80,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   sendUDPMessages() async {
     print("SENDING-MESSAGE");
-    var DESTINATION_ADDRESS = InternetAddress("192.168.29.105");
+    var DESTINATION_ADDRESS = InternetAddress("192.168.29.1");
     udpSocket?.send(utf8.encode("Testing ${DateTime.now().toIso8601String()}"),
         DESTINATION_ADDRESS, 4444);
     print("SENT-MESSAGE");
@@ -117,20 +117,20 @@ class _MyHomePageState extends State<MyHomePage> {
       if (data != null) {
         String value = String.fromCharCodes(data.data).trim();
         _messages.add("${data.address..address}:${data.port} - $value");
+        socketMessages.sink.add(_messages);
       }
     });
   }
 
   void sendData() async {
+    var DESTINATION_ADDRESS = InternetAddress("192.168.29.255");
     // Create a UDP socket
     RawDatagramSocket socket = await RawDatagramSocket.bind(
         InternetAddress.anyIPv4, 0);
 
-    // Encode the message to bytes
-    List<int> data = utf8.encode("Hello, UDP! ${DateTime.now().toIso8601String()}");
 
     // Send the data to the specified address and port
-    socket.send(data, InternetAddress.loopbackIPv4, 4444);
+    socket.send("Hello, UDP! ${DateTime.now().toIso8601String()}".codeUnits, DESTINATION_ADDRESS, 4444);
 
     // Close the socket
     socket.close();
@@ -176,12 +176,13 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
       ),
       body: StreamBuilder(
+        initialData: _messages,
         stream: socketMessages.stream,
         builder: (context, snapshot) {
           var data = snapshot.data;
           return ListView.separated(itemBuilder: (context, index) {
             var model = data?[index];
-            return Flexible(child: Text("$model"));
+            return Text("$model");
           },
               separatorBuilder: (context, index) => Divider(),
               itemCount: data?.length ?? 0);
