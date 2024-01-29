@@ -93,7 +93,7 @@ class _MyHomePageState extends State<MyHomePage> {
     RawDatagramSocket socket = await RawDatagramSocket.bind(
         InternetAddress.anyIPv4, 0);
     // Send the data to the specified address and port
-    var count = socket.send("Hello [WINDOWS], UDP! ${DateTime.now().toIso8601String()}".codeUnits, address, port);
+    var count = socket.send("Hello [${Platform.operatingSystem}], UDP! ${DateTime.now().toIso8601String()}".codeUnits, address, port);
     print("SENDING $count");
 
     // Close the socket
