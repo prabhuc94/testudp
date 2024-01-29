@@ -59,50 +59,11 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
   String broadcastMessage = "";
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
-  RawDatagramSocket? udpSocket;
   List<String> _messages = [];
   StreamController<List<String>> socketMessages = StreamController.broadcast(
       sync: true);
-
-  sendUDPMessages() async {
-    print("SENDING-MESSAGE");
-    var DESTINATION_ADDRESS = InternetAddress("192.168.29.1");
-    udpSocket?.send(utf8.encode("Testing ${DateTime.now().toIso8601String()}"),
-        DESTINATION_ADDRESS, 4444);
-    print("SENT-MESSAGE");
-    /*var DESTINATION_ADDRESS = InternetAddress("192.168.29.105");
-    RawDatagramSocket.bind(InternetAddress.anyIPv4, 4444).then((RawDatagramSocket udpSocket) {
-      print('SOCKET-CONNECTED');
-      udpSocket.broadcastEnabled = true;
-      udpSocket.listen((e) {
-        Datagram? dg = udpSocket.receive();
-        if (dg != null) {
-          print("RECEIVED DATA AS ${String.fromCharCodes(dg.data).toString()}");
-          setState(() {
-            broadcastMessage = "received the Data as : ${dg.data}";
-          });
-        }
-      });
-      List<int> data = utf8.encode('TEST Message from Prabhu system ${DateTime.now().toIso8601String()}');
-      udpSocket.send(data, DESTINATION_ADDRESS, 4444);
-    }).catchError((e) {
-      print("SEND-MESSAGE-CATCH ${e}");
-    });*/
-  }
 
   @override
   void initState() {
@@ -112,6 +73,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _initializeReceiver() async {
     var socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 4444);
+    socket.send("Sever Connected".codeUnits, InternetAddress.loopbackIPv4, 4444);
     socket.listen((event) {
       var data = socket.receive();
       if (data != null) {
@@ -130,28 +92,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
 
     // Send the data to the specified address and port
-    socket.send("Hello, UDP! ${DateTime.now().toIso8601String()}".codeUnits, DESTINATION_ADDRESS, 4444);
+    socket.send("Hello [WINDOWS], UDP! ${DateTime.now().toIso8601String()}".codeUnits, DESTINATION_ADDRESS, 4444);
 
     // Close the socket
     socket.close();
-  }
-
-  void _initialize() async {
-    udpSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 4444);
-    if (udpSocket != null) {
-      udpSocket?.broadcastEnabled = true;
-      print("SOCKET-CONNECTED ${udpSocket?.broadcastEnabled}");
-      udpSocket?.listen((event) {
-        var data = udpSocket?.receive();
-        print("LISTEN $event");
-        if (event == RawSocketEvent.read) {
-          if (data != null) {
-            var value = String.fromCharCodes(data.data);
-            print("SOCKET-LISTEN ${value}");
-          }
-        }
-      });
-    }
   }
 
   @override
