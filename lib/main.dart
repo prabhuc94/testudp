@@ -60,6 +60,8 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   String broadcastMessage = "";
+  final int port = 4444;
+  final InternetAddress address = InternetAddress("239.25.25.255");
 
   List<String> _messages = [];
   StreamController<List<String>> socketMessages = StreamController.broadcast(
@@ -72,30 +74,27 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _initializeReceiver() async {
-    InternetAddress multicastAddress = new InternetAddress("239.25.25.255");
-    var socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 4444);
-    socket.send("Sever Connected".codeUnits, InternetAddress.loopbackIPv4, 4444);
-    socket.joinMulticast(multicastAddress);
-    socket.send("Multicast group joined".codeUnits, InternetAddress.loopbackIPv4, 4444);
+    var socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, port);
+    socket.send("Sever Connected".codeUnits, InternetAddress.loopbackIPv4, port);
+    socket.joinMulticast(address);
+    socket.send("Multicast group joined".codeUnits, InternetAddress.loopbackIPv4, port);
     socket.listen((event) {
       var data = socket.receive();
       if (data != null) {
         String value = String.fromCharCodes(data.data).trim();
-        _messages.add("${data.address..address}:${data.port} - $value");
+        _messages.add("${data.address.address}:${data.port} - $value");
         socketMessages.sink.add(_messages);
       }
     });
   }
 
   void sendData() async {
-    var DESTINATION_ADDRESS = InternetAddress("239.25.25.255");
     // Create a UDP socket
     RawDatagramSocket socket = await RawDatagramSocket.bind(
         InternetAddress.anyIPv4, 0);
-
-
     // Send the data to the specified address and port
-    socket.send("Hello [WINDOWS], UDP! ${DateTime.now().toIso8601String()}".codeUnits, DESTINATION_ADDRESS, 4444);
+    var count = socket.send("Hello [WINDOWS], UDP! ${DateTime.now().toIso8601String()}".codeUnits, address, port);
+    print("SENDING $count");
 
     // Close the socket
     socket.close();
