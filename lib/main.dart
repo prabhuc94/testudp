@@ -72,8 +72,11 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _initializeReceiver() async {
+    InternetAddress multicastAddress = new InternetAddress("239.25.25.255");
     var socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 4444);
     socket.send("Sever Connected".codeUnits, InternetAddress.loopbackIPv4, 4444);
+    socket.joinMulticast(multicastAddress);
+    socket.send("Multicast group joined".codeUnits, InternetAddress.loopbackIPv4, 4444);
     socket.listen((event) {
       var data = socket.receive();
       if (data != null) {
@@ -85,7 +88,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void sendData() async {
-    var DESTINATION_ADDRESS = InternetAddress("192.168.29.255");
+    var DESTINATION_ADDRESS = InternetAddress("239.25.25.255");
     // Create a UDP socket
     RawDatagramSocket socket = await RawDatagramSocket.bind(
         InternetAddress.anyIPv4, 0);
