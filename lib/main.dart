@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'dart:convert';
+import 'package:web_socket_channel/io.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -60,8 +61,9 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   String broadcastMessage = "";
-  final int port = 1423;
-  final InternetAddress address = InternetAddress("239.25.25.255");
+  final int port = 19302;
+  final stunServerDomain = 'stun.l.google.com';
+  late InternetAddress address;
 
   RawDatagramSocket? socket;
   List<String> _messages = [];
@@ -74,10 +76,27 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
   }
 
+  void _initializeServerSocket() async {
+    var uri = Uri.parse("wss://0.peerjs.com:443/peerjs?key=peerjs&id=prabhu@yopmail.com&token=ssdsew&version=1");
+    final channel = WebSocketChannel.connect(uri);
+    await channel.ready;
+
+    channel.stream.listen((event) {
+      print("EVENT [${TimeOfDay.now().format(context)}]: ${event}");
+    }, onDone: () {
+      print("ONDONE [${TimeOfDay.now().format(context)}]: SOCKET-CLOSED");
+    }, onError: (val) {
+      print("ONERROR [${TimeOfDay.now().format(context)}]: SOCKET-ERROR: $val");
+    });
+  }
+
   void _initializeReceiver() async {
-    socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, port);
+    socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+    var addre = (await InternetAddress.lookup(stunServerDomain)).lastOrNull;
+    address = InternetAddress("${addre?.address}");
+    print('ADDRESSS: ${addre?.address}');
     socket?.send("Sever Connected".codeUnits, InternetAddress.loopbackIPv4, port);
-    socket?.joinMulticast(address);
+    // socket?.joinMulticast(address);
     socket?.send("Multicast group joined".codeUnits, InternetAddress.loopbackIPv4, port);
     socket?.listen((event) {
       var data = socket?.receive();
