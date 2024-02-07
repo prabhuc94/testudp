@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:udp/udp.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:io';
@@ -91,10 +92,23 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _initializeReceiver() async {
-    socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
-    var addre = (await InternetAddress.lookup(stunServerDomain)).lastOrNull;
-    address = InternetAddress("${addre?.address}");
-    print('ADDRESSS: ${addre?.address}');
+    var addre = (await InternetAddress.lookup(stunServerDomain));
+    if (addre.isEmpty) {
+      return;
+    }
+    var ip = addre.first.address;
+    address = InternetAddress(ip);
+    print('ADDRESSS: ${address}');
+    final socket = await UDP.bind(Endpoint.any(port: Port(port)));
+    socket.socket?.listen((datagram) {
+      final response = String.fromCharCodes(socket.socket?.receive()?.data ?? []);
+      print('Response from STUN server: $response');
+      _messages.add(response);
+      socketMessages.sink.add(_messages);
+    });
+
+    /*socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+    print('ADDRESSS: ${address}');
     socket?.send("Sever Connected".codeUnits, InternetAddress.loopbackIPv4, port);
     // socket?.joinMulticast(address);
     socket?.send("Multicast group joined".codeUnits, InternetAddress.loopbackIPv4, port);
@@ -105,7 +119,7 @@ class _MyHomePageState extends State<MyHomePage> {
         _messages.add("${data.address.address}:${data.port} - $value");
         socketMessages.sink.add(_messages);
       }
-    });
+    });*/
   }
   
   Future<bool> portExist(int portNumber) async {
@@ -118,13 +132,17 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void sendData() async {
-    RawDatagramSocket soc = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+    var sock = await UDP.bind(Endpoint.any(port: Port(port)));
+    await sock.send("Hello [${Platform.operatingSystem}], UDP! ${DateTime.now().toIso8601String()}".codeUnits,Endpoint.unicast(address, port: Port(port))).catchError((e) {
+      print("SENDING-ERROR ${e}");
+    });
+    /*RawDatagramSocket soc = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
     soc.send("Hello [${Platform.operatingSystem}], UDP! ${DateTime.now().toIso8601String()}".codeUnits, address, port);
     soc.listen((event) {
       print("EVENT ${event.runtimeType}");
     }, onError: (e) {
       print("SENDING-ERROR ${e}");
-    });
+    });*/
   }
 
   @override
